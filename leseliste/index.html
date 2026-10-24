@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f3ee">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Leseliste">
+<meta name="robots" content="noindex">
+<title>Meine Leseliste</title>
+<style>
+@font-face{font-family:"LL Serif";src:url(fonts/fraunces.woff2) format("woff2");font-weight:300 800;font-display:swap}
+@font-face{font-family:"LL Sans";src:url(fonts/inter.woff2) format("woff2");font-weight:300 800;font-display:swap}
+:root{--bg:#f6f3ee;--paper:#fff;--ink:#1f1d1a;--mute:#7a746b;--soft:#9a948a;--line:#e4dfd6;--gold:#d49a1e;--ok:#2f7a55;
+--serif:"LL Serif",Georgia,"Times New Roman",serif;--sans:"LL Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+--pad:18px;--panel:440px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+header{position:sticky;top:0;z-index:5;background:rgba(246,243,238,.93);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+ padding:calc(env(safe-area-inset-top) + 20px) var(--pad) 8px}
+.htop{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:-.5px;line-height:1.1}
+.sub{color:var(--mute);font-size:14px;margin-top:4px}
+.tools{margin-top:14px;display:flex;gap:8px}
+.search{flex:1;min-width:0;position:relative}
+.search input{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:11px 36px 11px 14px;font-size:16px;outline:none;-webkit-appearance:none}
+.search input:focus{border-color:#bfb7aa}
+.search button{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;color:var(--soft);font-size:18px;display:none}
+.search.has button{display:block}
+.sort{flex:none;position:relative}
+.sort select{-webkit-appearance:none;appearance:none;border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:11px 30px 11px 12px;font-size:15px;height:100%;max-width:150px}
+.sort:after{content:"";position:absolute;right:12px;top:50%;width:7px;height:7px;border-right:1.6px solid var(--mute);border-bottom:1.6px solid var(--mute);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px var(--pad) 6px;margin:0 calc(-1*var(--pad));scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 12px;font-size:14px;display:flex;align-items:center;gap:6px;white-space:nowrap;color:#3a362f}
+.chip i{width:8px;height:8px;border-radius:50%}
+.chip b{font-weight:500;color:var(--soft)}
+.chip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip[aria-pressed=true] b{color:#c9c2b5}
+.chip.read i{background:var(--ok)}
+main{padding:10px var(--pad) calc(40px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px}
+.empty{grid-column:1/-1;text-align:center;color:var(--mute);padding:60px 0}
+.card{text-align:left;display:block;width:100%;-webkit-tap-highlight-color:transparent}
+.cv{aspect-ratio:2/3;border-radius:6px;overflow:hidden;position:relative;background:#e6e0d6;
+ box-shadow:0 1px 2px rgba(0,0,0,.12),0 8px 20px -8px rgba(0,0,0,.28);transition:transform .2s,box-shadow .2s}
+.card:active .cv{transform:scale(.98)}
+@media(hover:hover){.card:hover .cv{transform:translateY(-3px);box-shadow:0 2px 4px rgba(0,0,0,.12),0 14px 28px -10px rgba(0,0,0,.35)}}
+.card.sel .cv{outline:3px solid var(--ink);outline-offset:3px}
+.cv img{width:100%;height:100%;object-fit:cover;display:block}
+.cv .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:14px;text-align:center;font-family:var(--serif);font-size:16px;color:#5e574d}
+.badge{position:absolute;left:8px;bottom:8px;background:rgba(255,255,255,.94);border-radius:8px;padding:3px 7px;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.badge span{color:var(--gold)}
+.done{position:absolute;right:8px;top:8px;background:var(--ok);color:#fff;border-radius:8px;padding:3px 8px;font-size:12px;font-weight:600}
+.card.isread .cv img{filter:saturate(.55) brightness(.97)}
+.card h3{font-size:14.5px;font-weight:600;line-height:1.3;margin-top:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card p{font-size:13px;color:var(--mute);margin-top:3px;display:flex;align-items:center;gap:6px;min-width:0}
+.card p i{width:7px;height:7px;border-radius:50%;flex:none}
+.card p em{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Detail */
+.scrim{position:fixed;inset:0;background:rgba(25,22,18,.38);opacity:0;pointer-events:none;transition:opacity .25s;z-index:20}
+.scrim.on{opacity:1;pointer-events:auto}
+.panel{position:fixed;z-index:21;background:var(--paper);display:flex;flex-direction:column;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.panel .scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;padding:0 22px 22px}
+.phead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 6px 22px}
+.phead .grab{display:none}
+.x{width:34px;height:34px;border-radius:50%;background:#f1ede6;font-size:20px;line-height:34px;text-align:center;color:#5e574d}
+.navbtns{display:flex;gap:6px}
+.navbtns button{width:34px;height:34px;border-radius:50%;background:#f1ede6;color:#5e574d;font-size:17px}
+.dhero{display:flex;gap:18px;align-items:flex-end;margin-top:6px}
+.dhero .dc{width:118px;flex:none;aspect-ratio:2/3;border-radius:6px;overflow:hidden;box-shadow:0 10px 26px -8px rgba(0,0,0,.4);background:#e6e0d6;position:relative}
+.dhero .dc img{width:100%;height:100%;object-fit:cover;display:block}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:#4a453d;background:#f3efe8;border-radius:999px;padding:4px 10px}
+.pill i{width:8px;height:8px;border-radius:50%}
+.dt{font-family:var(--serif);font-weight:600;font-size:23px;line-height:1.2;margin-top:10px;letter-spacing:-.2px}
+.da{color:var(--mute);font-size:15px;margin-top:5px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:20px}
+.facts div{background:#f7f4ef;border-radius:12px;padding:10px 12px;min-width:0}
+.facts small{display:block;font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.facts b{display:block;font-size:16px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.facts b span{color:var(--gold)}
+.facts em{display:block;font-style:normal;font-size:11.5px;line-height:1.35;color:var(--soft);margin-top:2px}
+.lab{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--soft);font-weight:600;margin:22px 0 7px}
+.txt{font-size:15px;line-height:1.6;color:#36322c}
+.src{font-size:12px;color:var(--soft);margin-top:6px}
+.why{font-size:15px;line-height:1.55;border-left:3px solid var(--c);padding:4px 0 4px 13px;color:#2a2722}
+.readbox{margin-top:22px;background:#eef6f1;border-radius:14px;padding:14px 16px;font-size:14.5px;color:#24533b;line-height:1.5}
+.readbox b{font-weight:600}
+.readbox .rl{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.readbox .rl button{font-size:14px;font-weight:600;color:#24533b;text-decoration:underline;text-underline-offset:3px}
+.pfoot .btn.sec{flex:.75}.pfoot{padding:12px 22px calc(14px + env(safe-area-inset-bottom));border-top:1px solid #efebe4;display:flex;gap:10px;background:var(--paper)}
+.btn{flex:1;white-space:nowrap;border-radius:13px;padding:14px 10px;font-size:15.5px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn.sec{background:#f1ede6;color:var(--ink)}
+.btn.pri{background:var(--ink);color:#fff}
+.btn.okb{background:var(--ok);color:#fff}
+.btn[disabled]{opacity:.4;cursor:default}
+
+/* Telefon: Bottom-Sheet */
+.panel{left:0;right:0;bottom:0;height:92vh;height:92dvh;border-radius:18px 18px 0 0;transform:translateY(105%);box-shadow:0 -10px 40px rgba(0,0,0,.18)}
+.panel.on{transform:none}
+.phead .grab{display:block;position:absolute;left:50%;top:7px;width:38px;height:5px;border-radius:3px;background:#ddd6cb;transform:translateX(-50%)}
+
+/* Dialog Gelesen */
+.dlg{position:fixed;z-index:31;left:50%;top:50%;width:min(460px,calc(100vw - 28px));max-height:calc(100dvh - 28px);overflow-y:auto;background:var(--paper);border-radius:20px;
+ transform:translate(-50%,-46%) scale(.98);opacity:0;pointer-events:none;transition:.22s;box-shadow:0 24px 60px rgba(0,0,0,.25);padding:22px}
+.dlg.on{opacity:1;transform:translate(-50%,-50%);pointer-events:auto}
+.dscrim{z-index:30}
+.dlg h2{font-family:var(--serif);font-size:21px;font-weight:600;line-height:1.25}
+.dlg .ds{color:var(--mute);font-size:14px;margin-top:4px}
+.scale{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-top:8px}
+.scale button{aspect-ratio:1;border-radius:10px;border:1px solid var(--line);background:#faf8f4;font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.scale button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.scale-l{display:flex;justify-content:space-between;font-size:12px;color:var(--soft);margin-top:6px}
+.dlg textarea,.dlg input[type=date]{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:16px;background:#fff;outline:none;-webkit-appearance:none}
+.dlg textarea{min-height:76px;resize:vertical;line-height:1.45}
+.dlg .row{display:flex;gap:10px;margin-top:20px}
+.msg{background:#f7f4ef;border-radius:12px;padding:13px 14px;font-size:14.5px;line-height:1.5;margin-top:10px;white-space:pre-wrap;word-break:break-word}
+.hint{font-size:13px;color:var(--mute);margin-top:10px;line-height:1.5}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:.25s;z-index:40;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.pending{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:10;background:var(--ink);color:#fff;border-radius:999px;padding:10px 12px 10px 18px;display:none;align-items:center;gap:12px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);white-space:nowrap;max-width:calc(100vw - 24px)}
+.pending span{overflow:hidden;text-overflow:ellipsis}.pending button{flex:none}
+.pending.on{display:flex}
+.pending button{background:#fff;color:var(--ink);border-radius:999px;padding:7px 13px;font-weight:600;font-size:13.5px}
+
+/* iPad hoch & größer */
+@media(min-width:700px){
+ :root{--pad:32px}
+ header{padding-top:calc(env(safe-area-inset-top) + 28px)}
+ h1{font-size:36px}
+ main{grid-template-columns:repeat(4,minmax(0,1fr));gap:30px 22px;padding-top:16px}
+ .tools{max-width:640px}
+ .panel{left:auto;top:0;bottom:0;right:0;width:var(--panel);height:auto;border-radius:0;transform:translateX(105%);box-shadow:-12px 0 40px rgba(0,0,0,.14)}
+ .panel.on{transform:none}
+ .phead{padding-top:calc(env(safe-area-inset-top) + 14px)}
+ .phead .grab{display:none}
+ .dhero .dc{width:140px}
+ .dt{font-size:26px}
+}
+/* iPad quer / Desktop: geteilte Ansicht, Liste bleibt sichtbar */
+@media(min-width:1100px){
+ main{grid-template-columns:repeat(5,minmax(0,1fr))}
+ body.split main,body.split header{margin-right:var(--panel)}
+ body.split main{grid-template-columns:repeat(4,minmax(0,1fr))}
+ body.split .scrim{opacity:0;pointer-events:none}
+ body.split .panel{box-shadow:none;border-left:1px solid var(--line)}
+ main,header{transition:margin-right .3s cubic-bezier(.2,.8,.2,1)}
+}
+@media(min-width:1400px){main{grid-template-columns:repeat(6,minmax(0,1fr))}body.split main{grid-template-columns:repeat(5,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<header>
+ <div class="htop"><div><h1>Meine Leseliste</h1><div class="sub" id="sub"></div></div></div>
+ <div class="tools">
+  <label class="search" id="sw"><input id="q" type="search" placeholder="Titel, Autor …" autocomplete="off" aria-label="Suchen"><button id="qx" aria-label="Suche leeren">×</button></label>
+  <label class="sort"><select id="sort" aria-label="Sortieren">
+   <option value="r">★ Beste</option><option value="n">Meiste Stimmen</option><option value="t">Titel A–Z</option><option value="a">Autor A–Z</option><option value="y">Neueste (DE)</option><option value="p">Zuletzt hinzugefügt</option>
+  </select></label>
+ </div>
+ <div class="chips" id="chips"></div>
+</header>
+<main id="grid"></main>
+
+<div class="scrim" id="scrim"></div>
+<aside class="panel" id="panel" aria-hidden="true">
+ <div class="phead"><span class="grab"></span><div class="navbtns"><button id="prev" aria-label="Vorheriges Buch">‹</button><button id="next" aria-label="Nächstes Buch">›</button></div><button class="x" id="close" aria-label="Schließen">×</button></div>
+ <div class="scroll" id="detail"></div>
+ <div class="pfoot" id="pfoot"></div>
+</aside>
+
+<div class="scrim dscrim" id="dscrim"></div>
+<div class="dlg" id="dlg" role="dialog" aria-modal="true"></div>
+<div class="pending" id="pending"><span id="pendTxt"></span><button id="pendBtn">Nachricht</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const BOOKS=[{"k": "die-schwestern-von-auschwitz", "pos": 0, "t": "Die Schwestern von Auschwitz", "a": "Heather Morris", "u": "https://huebener.de/shop/item/9783492601375/die-schwestern-von-auschwitz-von-heather-morris-e-book-epub", "g": "Holocaust & Zeitzeugen", "yd": "2022", "yo": "2019", "yoOk": false, "r": "4,36", "rc": "100.626", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Als Kinder versprechen die Schwestern Cibi, Magda und Livia zusammenzubleiben, egal was passiert. Als Livia 1942 nach Auschwitz deportiert wird, ist Cibi entschlossen, ihr beizustehen. Als schließlich auch Magda in das Vernichtungslager gebracht wird, geben sich die Schwestern ein weiteres Versprechen: dass sie überleben werden. […] So beschließen die Schwestern, in Israel neu anzufangen und nicht nur zu überleben, sondern zu leben.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Du hast „Der Tätowierer von Auschwitz“ mit 10 bewertet – hier geht Heather Morris’ Welt weiter.", "c": "covers/0.jpg"}, {"k": "der-junge-auf-dem-berg", "pos": 1, "t": "Der Junge auf dem Berg", "a": "John Boyne", "u": "https://www.lehmanns.de/shop/literatur/39139768-9783733601508-der-junge-auf-dem-berg", "g": "Holocaust & Zeitzeugen", "yd": "2017", "yo": "2015", "yoOk": false, "r": "4,05", "rc": "27.956", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Als Pierrot seine Eltern verliert, nimmt ihn seine Tante zu sich in den deutschen Haushalt, in dem sie Dienst tut. […] Und es ist kein gewöhnliches Haus: Es ist der Berghof – Adolf Hitlers Sommerresidenz. Schnell gerät der Junge unter den direkten Einfluss des charismatischen Führers. Um ihm seine Treue zu beweisen, ist er zu allem bereit – auch zum Verrat.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Vom Autor von „Der Junge im gestreiften Pyjama“ (deine 10) – derselbe Blick durch Kinderaugen.", "c": "covers/1.jpg"}, {"k": "in-eisige-höhen-das-drama-am-mount-everest", "pos": 2, "t": "In eisige Höhen: Das Drama am Mount Everest", "a": "Jon Krakauer", "u": "https://www.hugendubel.de/de/taschenbuch/jon_krakauer-in_eisige_hoehen-1362911-produkt-details.html", "g": "Überleben & Abenteuer", "yd": "2000", "yo": "1997", "yoOk": false, "r": "4,27", "rc": "593.763", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Im März 1996 beauftragt die amerikanische Zeitschrift Outside den Reporter Jon Krakauer mit einem Bericht über die Kommerzialisierung des Bergsteigens am Mount Everest. […] Am 10. Mai 1996 steht er dann tatsächlich auf dem Gipfel, am Ende seiner Kräfte. […] Es kommt zur bis dahin größten Katastrophe am höchsten Berg der Welt: Neun Bergsteiger aus vier Expeditionen sterben, und vor Ende des Monats werden weitere drei Bergsteiger den Tod finden.", "bls": "Piper.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "„Everest Solo“ (10) und Messners „Überlebt“ (9) – das ist die dunkle Seite desselben Bergs.", "c": "covers/2.jpg"}, {"k": "sam-bankman-fried-die-geschichte-eines-amerikanischen-albtra", "pos": 3, "t": "Sam Bankman-Fried – Die Geschichte eines amerikanischen Albtraums", "a": "Michael Lewis", "u": "https://www.lehmanns.de/shop/wirtschaft/71601433-9783864709913-sam-bankman-fried-die-geschichte-eines-amerikanischen-albtraums", "g": "Unternehmer & Tech", "yd": "2024", "yo": "2023", "yoOk": false, "r": "3,84", "rc": "37.640", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Noch wenige Jahre zuvor war er als das neue Krypto-Wunderkind gefeiert worden, das sich praktisch über Nacht auf die Forbes-Milliardärsliste katapultiert hatte. Was war geschehen? Bestsellerautor Michael Lewis hatte unbegrenzten Zugang zu Sam Bankman-Fried und seinem inneren Kreis und erzählt nun dessen Geschichte.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Wie „Bad Blood“ (9) und „House of Wirecard“ (9): der Aufstieg und Fall eines Wunderkinds – mit Krypto-Bezug, den du durchschaust.", "c": "covers/3.jpg"}, {"k": "635-tage-im-eis-die-shackleton-expedition", "pos": 4, "t": "635 Tage im Eis: Die Shackleton-Expedition", "a": "Alfred Lansing", "u": "https://www.hugendubel.de/de/ebook_epub/alfred_lansing-635_tage_im_eis-28105550-produkt-details.html", "g": "Überleben & Abenteuer", "yd": "2016", "yo": "1959", "yoOk": false, "r": "4,47", "rc": "181.934", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Am Anfang steht der Plan von der erstmaligen Durchquerung des weißen Kontinents. Doch das gewaltige Naturwunder Antarktis wird im Jahr 1915 für die Crew der ›Endurance‹ zur Hölle aus Eis. Beharrlich verfolgt Expeditionsleiter Sir Ernest Shackleton bald nur noch ein Ziel: 28 Männer lebend wieder in die Zivilisation zurückzubringen.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "„438 Tage“ (9) auf dem Meer – hier sind es 635 Tage im Eis, ohne einen einzigen Toten.", "c": "covers/4.jpg"}, {"k": "die-kreativitäts-ag", "pos": 5, "t": "Die Kreativitäts-AG", "a": "Ed Catmull, Amy Wallace", "u": "https://www.hugendubel.de/de/ebook_epub/ed_catmull_amy_wallace-die_kreativitaets_ag-22809673-produkt-details.html", "g": "Unternehmer & Tech", "yd": "2014", "yo": "2014", "yoOk": false, "r": "4,20", "rc": "106.231", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Die Pixar Animation Studios schreiben seit über 25 Jahren Erfolgsgeschichte mit Blockbustern wie »Toy Story«, »Findet Nemo«, »Cars« und vielen mehr. Ed Catmull, einer der Gründer von Pixar, gibt in seinem Buch tiefe Einblicke in die Unternehmensführung und das Management dieses außergewöhnlichen Unternehmens. Er zeigt, wie man mit Unsicherheit umgeht, zerstörerische Kräfte überwindet – und warum man viel mehr erreicht, wenn man den Mitarbeitern Freiheit gibt, statt sie zu kontrollieren.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "„Shoe Dog“ (10) und die Musk-Biografie (10) – Gründergeschichte mit echtem Blick hinter die Kulissen.", "c": "covers/5.jpg"}, {"k": "die-bibliothekarin-von-auschwitz", "pos": 6, "t": "Die Bibliothekarin von Auschwitz", "a": "Antonio Iturbe", "u": "https://www.hugendubel.de/de/ebook_epub/antonio_iturbe-die_bibliothekarin_von_auschwitz-38999903-produkt-details.html", "g": "Holocaust & Zeitzeugen", "yd": "2020", "yo": "2012", "yoOk": false, "r": "4,15", "rc": "67.247", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Im alles verschlingenden Morast des Konzentrationslagers Auschwitz-Birkenau hat der Blockälteste Fredy Hirsch heimlich eine Schule aufgebaut. Ihr wertvollster Besitz sind acht alte, zerfallene Bücher. Fredy ernennt die 14-jährige Dita zur Bibliothekarin, sie soll die verbotenen Bände künftig verstecken und schützen. […] Eine ergreifende Auschwitz-Geschichte über die Magie der Bücher, erzählt nach einer wahren Begebenheit.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Für dich als Fan von „Das Tagebuch der Anne Frank“ (10) – eine Bibliothek als Widerstand.", "c": "covers/6.jpg"}, {"k": "sturz-ins-leere", "pos": 7, "t": "Sturz ins Leere", "a": "Joe Simpson", "u": "https://www.piper.de/buecher/sturz-ins-leere-isbn-978-3-492-95446-4-ebook", "g": "Überleben & Abenteuer", "yd": "2012", "yo": "1988", "yoOk": false, "r": "4,23", "rc": "67.111", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Die beiden jungen Bergsteiger Joe Simpson und Simon Yates brechen auf, um den Andengipfel Siula Grande über die bisher unbezwungene Westwand zu besteigen. Bei einem Sturz im Abstieg wird Simpsons Knie zerschmettert. […] Um nicht selbst mit in die Tiefe gerissen zu werden, muss Yates das Seil kappen, das die beiden verbindet. Wie durch ein Wunder entgeht Simpson dem sicheren Tod.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "„Das Limit bin nur ich“ (9) in der extremsten Form: Überleben gegen jede Wahrscheinlichkeit.", "c": "covers/7.jpg"}, {"k": "der-allesverkäufer-jeff-bezos-und-das-imperium-von-amazon", "pos": 8, "t": "Der Allesverkäufer: Jeff Bezos und das Imperium von Amazon", "a": "Brad Stone", "u": "https://www.hugendubel.de/de/ebook_epub/brad_stone-der_allesverkaeufer-34825010-produkt-details.html", "g": "Unternehmer & Tech", "yd": "2018", "yo": "2013", "yoOk": false, "r": "4,13", "rc": "79.079", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Bewundert, gefürchtet und hart kritisiert: Firmengründer Jeff Bezos und sein Unternehmen Amazon […] ist längst nicht nur der größte Onlineeinzelhändler der Welt. Was ist das Geheimnis des Systems Amazon? Wer zahlt den Preis? Der Technologieexperte Brad Stone ist der Erste mit Zugang zum Zentrum der Macht.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Musk-Biografie (10) und „Shoe Dog“ (10) – der nächste Gigant unter den Gründerporträts.", "c": "covers/8.jpg"}, {"k": "in-der-hölle-tanzen", "pos": 9, "t": "In der Hölle tanzen", "a": "Edith Eva Eger", "u": "https://www.penguin.de/buecher/edith-eva-eger-in-der-hoelle-tanzen/ebook/9783641254254", "g": "Holocaust & Zeitzeugen", "yd": "2019", "yo": "2017", "yoOk": false, "r": "4,57", "rc": "141.854", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Im Alter von 16 Jahren wurde Edith Eger 1944 aus ihrem Heimatland Ungarn nach Auschwitz verschleppt. Dort sah sie ihre Mutter in die Gaskammer gehen und musste vor Josef Mengele um ihr Leben tanzen. […] In den USA baute sie sich ein neues Leben auf und wurde erfolgreiche Psychologin und Therapeutin. […] Wir haben immer die Wahl zu lieben oder zu hassen.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Das Buch knüpft direkt an Frankls „…trotzdem Ja zum Leben sagen“ (10) an – Eger war seine Schülerin im Geiste.", "c": "covers/9.jpg"}, {"k": "der-letzte-überlebende", "pos": 10, "t": "Der letzte Überlebende", "a": "Sam Pivnik", "u": "https://www.herder.de/geschichte-wissen/shop/p8/87380-der-letzte-ueberlebende-ebook-epub/", "g": "Holocaust & Zeitzeugen", "yd": "2014", "yo": "2012", "yoOk": false, "r": "4,42", "rc": "1.436", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Als er 13 ist, erlebt Sam, der damals noch Szlamek heißt, wie die Nationalsozialisten in Polen einmarschieren. […] Er überlebt auch das Vernichtungslager Auschwitz-Birkenau, wo ein Fingerzeig über Leben im KZ oder Tod in der Gaskammer entscheidet. […] Als die Cap Arcona in der Lübecker Bucht versinkt, rettet er sich als einer von wenigen an Land.", "bls": "Herder.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "„Das Mädchen aus dem Lager“ (9) und der Tätowierer (10): ein weiteres echtes Zeitzeugnis.", "c": "covers/10.jpg"}, {"k": "zero-to-one", "pos": 11, "t": "Zero to One", "a": "Peter Thiel, Blake Masters", "u": "https://www.hugendubel.de/de/ebook_epub/peter_thiel_blake_masters-zero_to_one-22451786-produkt-details.html", "g": "Unternehmer & Tech", "yd": "2014", "yo": "2014", "yoOk": false, "r": "4,14", "rc": "422.895", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Wir leben in einer technologischen Sackgasse, sagt Silicon-Valley-Insider Peter Thiel. Zwar suggeriert die Globalisierung technischen Fortschritt, doch die vermeintlichen Neuerungen sind vor allem Kopien des Bestehenden […]. Wahre Innovation entsteht nicht horizontal, sondern sprunghaft – from zero to one.", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Thiel ist Musks PayPal-Weggefährte – passt zu deiner 10 für die Musk-Biografie.", "c": "covers/11.jpg"}, {"k": "unbroken", "pos": 12, "t": "Unbroken", "a": "Laura Hillenbrand", "u": "https://www.klett-cotta.de/produkt/laura-hillenbrand-unbroken-deutsch-9783608102390-t-517", "g": "Überleben & Abenteuer", "yd": "2011", "yo": "2010", "yoOk": false, "r": "4,39", "rc": "1.021.105", "rs": "Goodreads", "rf": "2026-10-20", "bl": "Verschollen im Zweiten Weltkrieg, misshandelt und gefoltert. Louis Zamperini, ein Huckleberry Finn der Vorstädte und amerikanisches Laufwunder bei den Olympischen Spielen 1936, überlebt das Unfassbare, wird zum Held wider Willen und verzeiht denen, die ihn demütigten.", "bls": "Klett-Cotta.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "„438 Tage“ (9) trifft „…trotzdem Ja zum Leben sagen“ (10): Überleben auf dem Meer und im Lager.", "c": "covers/12.jpg"}, {"k": "maniac", "pos": 13, "t": "MANIAC", "a": "Benjamín Labatut", "u": "https://www.suhrkamp.de/ebook/benjamin-labatut-maniac-t-9783518777336", "g": "Roman & Ideen", "yd": "2023", "yo": "2023", "yoOk": false, "r": "4,33", "rc": "31.900", "rs": "Goodreads", "rf": "2026-10-20", "bl": "MANIAC erzählt von den Träumen und Albträumen des vergangenen Jahrhunderts. Von seinen kühnsten Denkern und ihren abgründigsten Hinterlassenschaften. Es beginnt mit John von Neumann – einer der Väter der Atombombe, Erfinder der Spieltheorie und Pionier der künstlichen Intelligenz. Und endet mit einer der großen Fragen unserer Gegenwart: Können wir Menschen unser Verschwinden doch noch verhindern?", "bls": "Hugendubel.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "„Kurze Antworten auf große Fragen“ (9) und „1984“ (9) – Wissenschaft und Zukunftsangst als großer Roman.", "c": "covers/13.jpg"}, {"k": "der-sohn-des-oligarchen", "pos": 14, "t": "Der Sohn des Oligarchen", "a": "Patrick Radden Keefe", "u": "https://www.hanser-literaturverlage.de/buch/patrick-radden-keefe-der-sohn-des-oligarchen-9783446287495-t-5933", "g": "Unternehmer & Tech", "yd": "2026", "yo": "2026", "yoOk": false, "r": "4,26", "rc": "99.415", "rs": "Goodreads", "rf": "2026-10-24", "bl": "London, 2019: Als der 19-jährige Zac Brettler vom Balkon eines Luxushochhauses in den Tod stürzt, kommt eine dunkle Wahrheit ans Licht – er hatte sich als Sohn eines russischen Oligarchen ausgegeben und immer tiefer in die kriminellen Machenschaften zwielichtiger Superreicher verstrickt. Die Polizei zeigt wenig Interesse an der Aufklärung […]. Minutiös recherchiert und hervorragend erzählt, widmet sich Keefe dem schillerndsten Treffpunkt der internationalen High Society und offenbart, welcher Strudel aus Gewalt hinter ihrer glänzenden Fassade verborgen liegt.", "bls": "hanser-literaturverlage.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Neues True-Crime-Sachbuch von Keefe, so gründlich recherchiert wie „Imperium der Schmerzen“ (9). Hinweis: Auf Audible klagen zwei Hörer über den Sprecher und Längen.", "c": "covers/14.jpg"}, {"k": "ist-das-ein-mensch", "pos": 15, "t": "Ist das ein Mensch?", "a": "Primo Levi", "u": "https://www.dtv.de/buch/ist-das-ein-mensch-12395", "g": "Holocaust & Zeitzeugen", "yd": "1961", "yo": "1947", "yoOk": false, "r": "4,35", "rc": "91.239", "rs": "Goodreads", "rf": "2026-10-24", "bl": "Dieser Band beschreibt das Jahr, das Primo Levi in Auschwitz verbracht hat: vom Februar 1944 bis zum Januar 1945. »Nicht um neue Anschuldigungen vorzubringen, habe ich dieses Buch geschrieben«, sagt Levi, »sondern als Dokument für das Studium einiger zentraler Aspekte des menschlichen Seelenlebens.« Die zentrale Frage freilich, die Titelfrage, wird von Levi auf zweifache Weise beantwortet: Mensch ist, wer tötet, wer Unrecht zufügt oder erleidet. […]", "bls": "dtv.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Levis Bericht aus Auschwitz ist der große Klassiker neben Frankl – passt direkt zu „…trotzdem Ja zum Leben sagen“ (10).", "c": "covers/15.jpg"}, {"k": "narziß-und-goldmund", "pos": 16, "t": "Narziß und Goldmund", "a": "Hermann Hesse", "u": "https://www.suhrkamp.de/ebook/hermann-hesse-narziss-und-goldmund-t-9783518736401", "g": "Roman & Ideen", "yd": "1930", "yo": "1930", "yoOk": true, "r": "4,22", "rc": "77.052", "rs": "Goodreads", "rf": "2026-10-24", "bl": "Hermann Hesses Erzählung über den Gegensatz zwischen Geist- und Sinnenmenschen und ihre produktive Vereinigung im Künstler ist eine moderne Gestaltung des Don Juan und Casanova-Motivs. Sie ist aber auch ein Loblied der Freundschaft, voller Abenteuer in einem zeitlosen Mittelalter. […] Zu Hesses Lebzeiten war Narziß und Goldmund das erfolgreichste seiner Bücher.", "bls": "suhrkamp.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Nach „Siddhartha“ (10) und „Der Steppenwolf“ (9) der nächste große Hesse: Geist gegen Sinnlichkeit, zwei Freunde, zwei Lebenswege.", "c": "covers/16.jpg"}, {"k": "alles-was-wir-geben-mussten", "pos": 17, "t": "Alles, was wir geben mussten", "a": "Kazuo Ishiguro", "u": "https://www.penguin.de/buecher/kazuo-ishiguro-alles-was-wir-geben-mussten/hoerbuch-download/9783837166439", "g": "Roman & Ideen", "yd": "2005", "yo": "2005", "yoOk": false, "r": "3,85", "rc": "922.197", "rs": "Goodreads", "rf": "2026-10-24", "bl": "Ein großer Sportplatz, freundliche Klassenzimmer und getrennte Schlafsäle für Jungen und Mädchen – auf den ersten Blick scheint Hailsham ein ganz gewöhnliches englisches Internat zu sein. Aber die Lehrer, so engagiert und freundlich sie auch sind, heißen hier Aufseher, und sie lassen die Kinder früh spüren, dass sie für eine besondere Zukunft ausersehen sind. Dieses Gefühl hält Kathy, Ruth und Tommy durch alle Stürme der Pubertät und Verwirrungen der Liebe zusammen – bis es an der Zeit ist, ihrer wahren Bestimmung zu folgen.", "bls": "penguin.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Eine leise Dystopie über Menschen, deren Leben ein System vorgibt – dieselbe Frage nach Freiheit wie in „1984“ (9) und Silo, nur ruhiger erzählt.", "c": "covers/17.jpg"}, {"k": "über-die-psychologie-des-geldes", "pos": 18, "t": "Über die Psychologie des Geldes", "a": "Morgan Housel", "u": "https://www.buecher.de/shop/home/artikeldetails/A1059612865", "g": "Unternehmer & Tech", "yd": "2021", "yo": "2020", "yoOk": false, "r": "4,27", "rc": "371.350", "rs": "Goodreads", "rf": "2026-10-24", "bl": "»Geld hat viel mehr mit Psychologie zu tun als mit Finanzen.« […] In der realen Welt treffen Menschen ihre finanziellen Entscheidungen nicht aufgrund einer Tabellenkalkulation. Sie treffen sie beim Abendessen oder während eines Meetings, wo die persönliche Geschichte, der individuelle Blick auf die Welt, das eigene Ego und weitere krude Einflüsse zusammentreffen. […] Anhand von 20 Kurzgeschichten vermittelt der preisgekrönte Autor Morgan Housel anschaulich, dass bei Geldthemen nicht entscheidend ist, über wie viel theoretisches Wissen jemand verfügt, sondern wie er sich in einer Stresssituation verhält.", "bls": "lehmanns.de (Verlagstext FinanzBuch)", "blt": "Verlagstext (gekürzt)", "w": "Kurze Kapitel darüber, warum wir mit Geld so unvernünftig umgehen – die Geld-Seite von „Schnelles Denken, langsames Denken“ (9), ohne Ratgeber-Kitsch.", "c": "covers/18.jpg"}, {"k": "shantaram", "pos": 19, "t": "Shantaram", "a": "Gregory David Roberts", "u": "https://www.penguin.de/buecher/gregory-david-roberts-shantaram/ebook/9783641012175", "g": "Überleben & Abenteuer", "yd": "2007", "yo": "2003", "yoOk": false, "r": "4,28", "rc": "249.633", "rs": "Goodreads", "rf": "2026-10-24", "bl": "Shantaram erzählt in fiktionaler Form die Geschichte von Roberts’ eigenem Leben: Als der Australier Lindsay in Bombay strandet, hat er zwei Jahre seiner Gefängnisstrafe abgesessen und ist auf der Flucht vor Interpol. Zu seinem Glück begegnet er dem jungen Inder Prabaker, der ihn unter seine Fittiche nimmt. […] Er wird zu „Shantaram“, einem „Mann des Friedens“ und kämpft für die Ärmsten der Armen. Doch dann verfällt Lindsay der geheimnisvollen Karla, einer Deutsch-Amerikanerin mit dubiosen Kontakten zur Unterwelt …", "bls": "penguin.de (Verlagstext)", "blt": "Verlagstext (gekürzt)", "w": "Ein dicker Abenteuerroman mit wahrem Kern – passt zum Reisegeist von „Mit 50 Euro um die Welt“ (9), und mal etwas ganz Neues für dich.", "c": "covers/19.jpg"}];
+const COL={"Holocaust & Zeitzeugen":"#8b5e6b","Überleben & Abenteuer":"#3d7489","Unternehmer & Tech":"#b07a2a","Roman & Ideen":"#5d7a4c"};
+const KEY="leseliste.gelesen.v1";
+const $=s=>document.querySelector(s);
+const num=s=>s?parseFloat(String(s).replace(/\./g,'').replace(',','.')):0;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let read={};try{read=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(read))}catch(e){}};
+let st={q:'',g:'Alle',sort:'r',open:null};
+let list=[];
+
+function fmtDate(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return `${d}.${m}.${y}`}
+function today(){const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+
+function chips(){
+ const cnt={};BOOKS.forEach(b=>{if(b.g)cnt[b.g]=(cnt[b.g]||0)+1});
+ const nRead=BOOKS.filter(b=>read[b.k]).length;
+ let h=`<button class="chip" aria-pressed="${st.g==='Alle'}" data-g="Alle">Alle <b>${BOOKS.length}</b></button>`;
+ for(const g of Object.keys(COL))if(cnt[g])h+=`<button class="chip" aria-pressed="${st.g===g}" data-g="${esc(g)}"><i style="background:${COL[g]}"></i>${esc(g)} <b>${cnt[g]}</b></button>`;
+ if(nRead)h+=`<button class="chip read" aria-pressed="${st.g==='__read'}" data-g="__read"><i></i>Gelesen <b>${nRead}</b></button>`;
+ $('#chips').innerHTML=h;
+ const open=BOOKS.length-nRead;
+ $('#sub').textContent=`${BOOKS.length} Bücher`+(nRead?` · ${nRead} gelesen, ${open} offen`:'')+' · Bewertungen von Goodreads';
+}
+function filtered(){
+ const q=st.q.trim().toLowerCase();
+ let L=BOOKS.filter(b=>(st.g==='Alle'||(st.g==='__read'?read[b.k]:b.g===st.g))&&(!q||(b.t+' '+b.a).toLowerCase().includes(q)));
+ const s=st.sort,cmp={r:(a,b)=>num(b.r)-num(a.r),n:(a,b)=>num(b.rc)-num(a.rc),t:(a,b)=>a.t.localeCompare(b.t,'de'),a:(a,b)=>a.a.split(',')[0].split(' ').pop().localeCompare(b.a.split(',')[0].split(' ').pop(),'de'),y:(a,b)=>(+b.yd||0)-(+a.yd||0),p:(a,b)=>b.pos-a.pos}[s];
+ L.sort(cmp);
+ if(st.g!=='__read')L.sort((a,b)=>(!!read[a.k])-(!!read[b.k]));
+ return L;
+}
+function grid(){
+ list=filtered();
+ if(!list.length){$('#grid').innerHTML=`<div class="empty">Kein Buch passt zu „${esc(st.q)}“.</div>`;return}
+ $('#grid').innerHTML=list.map(b=>{const r=read[b.k];return `<button class="card${r?' isread':''}${st.open===b.k?' sel':''}" data-k="${b.k}">
+  <div class="cv">${b.c?`<img src="${b.c}" alt="" loading="lazy" decoding="async">`:`<div class="ph">${esc(b.t)}</div>`}
+  ${b.r?`<div class="badge"><span>★</span> ${b.r}</div>`:''}${r?`<div class="done">✓ ${r.note}/10</div>`:''}</div>
+  <h3>${esc(b.t)}</h3><p>${b.g?`<i style="background:${COL[b.g]||'#999'}"></i>`:''}<em>${esc(b.a)}</em></p></button>`}).join('');
+}
+function render(){chips();grid();pending()}
+
+function detail(k){
+ const b=BOOKS.find(x=>x.k===k);if(!b)return;st.open=k;
+ const r=read[k];const c=COL[b.g]||'#999';
+ $('#detail').innerHTML=`<div class="dhero"><div class="dc">${b.c?`<img src="${b.c}" alt="">`:''}</div><div>
+  ${b.g?`<span class="pill"><i style="background:${c}"></i>${esc(b.g)}</span>`:''}
+  <h2 class="dt">${esc(b.t)}</h2><div class="da">${esc(b.a)}</div></div></div>
+  <div class="facts">
+   ${b.r?`<div><small>${esc(b.rs)}</small><b><span>★</span> ${b.r}</b><em>von 5</em></div><div><small>Stimmen</small><b>${b.rc}</b><em>Stand ${fmtDate(b.rf)}</em></div>`:''}
+   ${b.yd?`<div><small>Deutsch</small><b>${b.yd}</b><em>${b.yo?(b.yoOk?`Original ${b.yo}`:`Original ${b.yo}<br>(nicht geprüft)`):''}</em></div>`:''}
+  </div>
+  ${r?`<div class="readbox"><b>Gelesen am ${fmtDate(r.date)} · Note ${r.note}/10</b>${r.text?`<br>„${esc(r.text)}“`:''}<br>${r.sent?'Nachricht an die Bibliothek wurde geteilt/kopiert.':'Noch nicht an die Bibliothek geschickt.'}
+   <div class="rl"><button data-act="msg">Nachricht ${r.sent?'erneut ':''}teilen</button><button data-act="edit">Ändern</button><button data-act="undo">Zurück auf die Liste</button></div></div>`:''}
+  ${b.bl?`<div class="lab">Worum es geht</div><div class="txt">${esc(b.bl)}</div>${b.bls?`<div class="src">${esc(b.blt||'Verlagstext')} · ${esc(b.bls)}</div>`:''}`:''}
+  ${b.w?`<div class="lab">Warum es passt</div><div class="why" style="--c:${c}">${esc(b.w)}</div>`:''}`;
+ $('#pfoot').innerHTML=`${b.u?`<a class="btn sec" href="${esc(b.u)}" target="_blank" rel="noopener">Zum Buch ↗</a>`:''}
+  ${r?`<button class="btn okb" data-act="edit">✓ Gelesen · ${r.note}/10</button>`:`<button class="btn pri" data-act="mark">Als gelesen markieren</button>`}`;
+ $('#detail').scrollTop=0;pending();
+ $('#panel').classList.add('on');$('#panel').setAttribute('aria-hidden','false');
+ $('#scrim').classList.add('on');document.body.classList.add('split');
+ document.querySelectorAll('.card').forEach(e=>e.classList.toggle('sel',e.dataset.k===k));
+ if(location.hash!=='#'+k)history.replaceState(null,'','#'+k);
+}
+function closeDetail(){st.open=null;setTimeout(pending,0);$('#panel').classList.remove('on');$('#panel').setAttribute('aria-hidden','true');$('#scrim').classList.remove('on');document.body.classList.remove('split');
+ document.querySelectorAll('.card.sel').forEach(e=>e.classList.remove('sel'));history.replaceState(null,'',location.pathname)}
+function step(d){if(!list.length)return;let i=list.findIndex(b=>b.k===st.open);i=(i+d+list.length)%list.length;detail(list[i].k)}
+
+/* Gelesen-Dialog */
+let dl={k:null,note:0,text:'',date:''};
+function msgFor(keys){
+ return keys.map(k=>{const b=BOOKS.find(x=>x.k===k),r=read[k];
+  return `Gelesen: ${b.t} (${b.a}): ${r.note}`+(r.text?` – ${r.text}`:'')+(r.date!==today()?` (gelesen am ${fmtDate(r.date)})`:'')}).join('\n');
+}
+function openMark(k){
+ const r=read[k];dl={k,note:r?r.note:0,text:r?r.text:'',date:r?r.date:today()};drawMark();
+ $('#dlg').classList.add('on');$('#dscrim').classList.add('on');
+}
+function drawMark(){
+ const b=BOOKS.find(x=>x.k===dl.k);
+ $('#dlg').innerHTML=`<h2>Gelesen: ${esc(b.t)}</h2><div class="ds">${esc(b.a)}</div>
+  <div class="lab">Deine Note</div>
+  <div class="scale">${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button aria-pressed="${dl.note===n}" data-n="${n}">${n}</button>`).join('')}</div>
+  <div class="scale-l"><span>1 = gar nicht</span><span>10 = Lieblingsbuch</span></div>
+  <div class="lab">Kurznotiz <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></div>
+  <textarea id="dtext" maxlength="300" placeholder="Was hat dir gefallen oder gefehlt?">${esc(dl.text)}</textarea>
+  <div class="lab">Gelesen am</div><input type="date" id="ddate" value="${dl.date}" max="${today()}">
+  <div class="row"><button class="btn sec" data-act="cancel">Abbrechen</button><button class="btn pri" data-act="savemark" ${dl.note?'':'disabled'}>Speichern</button></div>`;
+}
+function drawSent(keys){
+ const m=msgFor(keys);
+ $('#dlg').innerHTML=`<h2>Gespeichert ✓</h2><div class="ds">Auf diesem Gerät als gelesen markiert.</div>
+  <div class="lab">Damit es in deine Bibliothek kommt</div>
+  <div class="hint" style="margin-top:0">Schick mir diese Nachricht im Chat. Ich trage das Buch dann mit Note in deine Bibliothek ein und nehme es von der Leseliste.</div>
+  <div class="msg" id="msgtxt">${esc(m)}</div>
+  <div class="row">${navigator.share?`<button class="btn pri" data-act="share">Teilen …</button>`:''}<button class="btn ${navigator.share?'sec':'pri'}" data-act="copy">Kopieren</button></div>
+  <div class="row" style="margin-top:10px"><button class="btn sec" data-act="cancel">Fertig</button></div>`;
+ $('#dlg').dataset.keys=JSON.stringify(keys);
+}
+function closeDlg(){$('#dlg').classList.remove('on');$('#dscrim').classList.remove('on')}
+function markSent(){const keys=JSON.parse($('#dlg').dataset.keys||'[]');keys.forEach(k=>{if(read[k])read[k].sent=true});save();render();if(st.open)detail(st.open)}
+async function copyText(t){
+ try{await navigator.clipboard.writeText(t);return true}catch(e){
+  const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,t.length);
+  let ok=false;try{ok=document.execCommand('copy')}catch(_){}ta.remove();return ok}
+}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2200)}
+function pending(){
+ const p=BOOKS.filter(b=>read[b.k]&&!read[b.k].sent);
+ $('#pending').classList.toggle('on',p.length>0&&!st.open);
+ $('#pendTxt').textContent=p.length===1?'1 Buch noch nicht geschickt':`${p.length} Bücher noch nicht geschickt`;
+ $('#pending').dataset.keys=JSON.stringify(p.map(b=>b.k));
+}
+
+/* Events */
+$('#chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;st.g=c.dataset.g;render();window.scrollTo({top:0,behavior:'smooth'})});
+$('#q').addEventListener('input',e=>{st.q=e.target.value;$('#sw').classList.toggle('has',!!st.q);grid()});
+$('#qx').addEventListener('click',e=>{e.preventDefault();$('#q').value='';st.q='';$('#sw').classList.remove('has');grid()});
+$('#sort').addEventListener('change',e=>{st.sort=e.target.value;grid()});
+$('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)detail(c.dataset.k)});
+$('#close').onclick=closeDetail;$('#scrim').onclick=closeDetail;$('#prev').onclick=()=>step(-1);$('#next').onclick=()=>step(1);
+$('#dscrim').onclick=closeDlg;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#dlg').classList.contains('on'))closeDlg();else if(st.open)closeDetail()}
+ if(st.open&&!$('#dlg').classList.contains('on')&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){if(e.key==='ArrowRight')step(1);if(e.key==='ArrowLeft')step(-1)}});
+document.addEventListener('click',async e=>{
+ const a=e.target.closest('[data-act]');const n=e.target.closest('.scale button');
+ if(n){dl.note=+n.dataset.n;dl.text=$('#dtext').value;dl.date=$('#ddate').value;drawMark();return}
+ if(!a)return;const act=a.dataset.act;
+ if(act==='mark'||act==='edit')openMark(st.open);
+ else if(act==='cancel')closeDlg();
+ else if(act==='savemark'){const t=$('#dtext').value.trim().replace(/\s+/g,' '),d=$('#ddate').value||today();
+  read[dl.k]={note:dl.note,text:t,date:d,sent:false,at:new Date().toISOString()};save();render();detail(dl.k);drawSent([dl.k])}
+ else if(act==='undo'){if(confirm('Wieder als ungelesen auf die Leseliste setzen?')){delete read[st.open];save();render();detail(st.open);toast('Wieder auf der Leseliste')}}
+ else if(act==='msg'){drawSent([st.open]);$('#dlg').classList.add('on');$('#dscrim').classList.add('on')}
+ else if(act==='copy'){const ok=await copyText($('#msgtxt').textContent);if(ok){markSent();toast('Kopiert – jetzt im Chat einfügen')}else toast('Bitte Text markieren und kopieren')}
+ else if(act==='share'){try{await navigator.share({text:$('#msgtxt').textContent});markSent();toast('Geteilt')}catch(err){}}
+});
+$('#pendBtn').onclick=()=>{const keys=JSON.parse($('#pending').dataset.keys||'[]');if(!keys.length)return;drawSent(keys);$('#dlg').classList.add('on');$('#dscrim').classList.add('on')};
+/* Wischen im Sheet nach unten schließt (Telefon) */
+(()=>{let y0=null;const p=$('#panel');p.addEventListener('touchstart',e=>{if(innerWidth<700&&$('#detail').scrollTop<=0)y0=e.touches[0].clientY},{passive:true});
+ p.addEventListener('touchend',e=>{if(y0!==null&&e.changedTouches[0].clientY-y0>90)closeDetail();y0=null},{passive:true})})();
+/* Bereinigen: Bücher, die nicht mehr auf der Liste stehen, aus dem lokalen Speicher entfernen */
+(()=>{const ks=new Set(BOOKS.map(b=>b.k));let ch=false;for(const k in read)if(!ks.has(k)){delete read[k];ch=true}if(ch)save()})();
+render();
+if(location.hash.length>1){const k=decodeURIComponent(location.hash.slice(1));if(BOOKS.some(b=>b.k===k))detail(k)}
+</script>
+</body>
+</html>
