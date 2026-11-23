@@ -25,11 +25,11 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
 
 /* Kopf */
 header{position:sticky;top:0;z-index:5;background:rgba(246,243,238,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
- padding:calc(env(safe-area-inset-top) + 18px) var(--padR) 0 var(--padL);border-bottom:1px solid transparent}
-header.scrolled{border-bottom-color:var(--line)}
-h1{font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:-.4px;line-height:1.1}
-.sub{color:var(--mute);font-size:14px;line-height:1.4;margin-top:4px}
-.tools{margin-top:14px;display:flex;gap:8px}
+ padding:calc(env(safe-area-inset-top) + 10px) var(--padR) 0 var(--padL);border-bottom:1px solid transparent;overflow:visible}
+header.scrolled,header.compact{border-bottom-color:var(--line)}
+h1{font-family:var(--serif);font-weight:600;font-size:24px;letter-spacing:-.3px;line-height:1.1}
+.sub{color:var(--mute);font-size:13px;line-height:1.3;margin-top:2px}
+.tools{margin-top:10px;display:flex;gap:8px}
 .search{flex:1;min-width:0;position:relative;display:block}
 .search input{width:100%;height:var(--tap);border:1px solid var(--line);background:var(--paper);border-radius:var(--r);padding:0 44px 0 14px;font-size:16px;outline:none;-webkit-appearance:none;appearance:none}
 .search input::-webkit-search-cancel-button{-webkit-appearance:none}
@@ -38,10 +38,13 @@ h1{font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:-.4px;
 .search button{position:absolute;right:0;top:0;width:var(--tap);height:var(--tap);color:var(--mute);font-size:20px;display:none}
 .search.has button{display:block}
 .sort{flex:none;position:relative;display:block}
-.sort select{-webkit-appearance:none;appearance:none;height:var(--tap);border:1px solid var(--line);background:var(--paper);border-radius:var(--r);padding:0 34px 0 14px;font-size:16px;width:132px}
+.sort select{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;opacity:0;pointer-events:none}
+.sortvis{height:var(--tap);border:1px solid var(--line);background:var(--paper);border-radius:var(--r);padding:0 34px 0 14px;font-size:16px;min-width:7.6em;max-width:11em;display:inline-flex;align-items:center;white-space:nowrap;color:inherit}
+.sortvis .slabel{overflow:hidden;text-overflow:ellipsis}
+.sortvis[aria-expanded=true]{border-color:#a9a092}
 .sort:after{content:"";position:absolute;right:14px;top:50%;width:7px;height:7px;border-right:1.6px solid var(--mute);border-bottom:1.6px solid var(--mute);transform:translateY(-70%) rotate(45deg);pointer-events:none}
-.chips{display:flex;gap:8px;overflow-x:auto;padding:12px var(--padR) 12px var(--padL);margin:0 calc(-1*var(--padR)) 0 calc(-1*var(--padL));scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-padding:0 var(--pad);
- -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:8px var(--padR) 10px var(--padL);margin:0 calc(-1*var(--padR)) 0 calc(-1*var(--padL));scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-padding:0 var(--pad);
+ -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
 .chips.end{-webkit-mask-image:none;mask-image:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:40px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:0 14px;font-size:14px;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;color:#3a362f;position:relative}
@@ -51,6 +54,17 @@ h1{font-family:var(--serif);font-weight:600;font-size:30px;letter-spacing:-.4px;
 .chip[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
 .chip[aria-pressed=true] b{color:#cfc8bb}
 .chip.read i{background:var(--ok)}
+/* Höhe des Kopfs ohne Transition – sonst hüpft die Liste. Ausgleich der Scrollposition in JS. */
+header.compact{padding-top:calc(env(safe-area-inset-top) + 8px);background:rgba(246,243,238,.97)}
+header.compact h1,header.compact .sub{display:none}
+header.compact .tools{margin-top:0}
+header.compact .chips{padding-top:6px;padding-bottom:8px}
+.sortmenu{display:none;position:fixed;z-index:15;width:min(280px,calc(100vw - 32px));background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.16);padding:6px}
+.sortmenu.on{display:block}
+.sortmenu button{display:flex;width:100%;align-items:center;justify-content:space-between;min-height:var(--tap);padding:0 12px;border-radius:10px;font-size:16px;text-align:left}
+.sortmenu button[aria-selected=true]{background:var(--tint);font-weight:600}
+.sortmenu button .ck{opacity:0;color:var(--ok);font-weight:700}
+.sortmenu button[aria-selected=true] .ck{opacity:1}
 
 /* Raster */
 main{padding:16px var(--padR) calc(96px + env(safe-area-inset-bottom)) var(--padL);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 16px;align-items:start}
@@ -166,10 +180,12 @@ main{padding:16px var(--padR) calc(96px + env(safe-area-inset-bottom)) var(--pad
 /* iPad hoch und größer */
 @media(min-width:700px){
  :root{--pad:32px}
- header{padding-top:calc(env(safe-area-inset-top) + 28px)}
- h1{font-size:36px}
+ header{padding-top:calc(env(safe-area-inset-top) + 22px)}
+ h1{font-size:32px}
+ .sub{font-size:14px}
  .tools{max-width:600px}
- .sort select{width:150px}
+ .sortvis{min-width:8em;max-width:12em}
+ header.compact{padding-top:calc(env(safe-area-inset-top) + 12px)}
  main{grid-template-columns:repeat(4,minmax(0,1fr));gap:32px 24px;padding-top:20px}
  .panel{left:auto;top:0;bottom:0;right:0;width:var(--panel);height:auto;border-radius:0;transform:translateX(105%);box-shadow:-12px 0 40px rgba(0,0,0,.14)}
  .panel.on{transform:none}
@@ -197,12 +213,23 @@ main{padding:16px var(--padR) calc(96px + env(safe-area-inset-bottom)) var(--pad
  <h1>Meine Leseliste</h1><div class="sub" id="sub"></div>
  <div class="tools">
   <label class="search" id="sw"><input id="q" type="search" placeholder="Titel, Autor …" autocomplete="off" aria-label="Suchen"><button id="qx" type="button" aria-label="Suche leeren">×</button></label>
-  <label class="sort"><select id="sort" aria-label="Sortieren">
-   <option value="r">★ Beste</option><option value="n">Meiste Stimmen</option><option value="t">Titel A–Z</option><option value="a">Autor A–Z</option><option value="y">Neueste (DE)</option><option value="p">Zuletzt hinzugefügt</option>
-  </select></label>
+  <div class="sort">
+   <select id="sort" aria-label="Sortieren" tabindex="-1">
+    <option value="r">★ Beste</option><option value="n">Meiste Stimmen</option><option value="t">Titel A–Z</option><option value="a">Autor A–Z</option><option value="y">Neueste (DE)</option><option value="p">Zuletzt hinzugefügt</option>
+   </select>
+   <button class="sortvis" id="sortVis" type="button" aria-label="Sortieren" aria-haspopup="listbox" aria-expanded="false"><span class="slabel">★ Beste</span></button>
+  </div>
  </div>
  <div class="chips" id="chips"></div>
 </header>
+<div class="sortmenu" id="sortmenu" role="listbox" aria-label="Sortieren" hidden>
+    <button type="button" role="option" data-v="r" aria-selected="true"><span>★ Beste</span><span class="ck">✓</span></button>
+    <button type="button" role="option" data-v="n" aria-selected="false"><span>Meiste Stimmen</span><span class="ck">✓</span></button>
+    <button type="button" role="option" data-v="t" aria-selected="false"><span>Titel A–Z</span><span class="ck">✓</span></button>
+    <button type="button" role="option" data-v="a" aria-selected="false"><span>Autor A–Z</span><span class="ck">✓</span></button>
+    <button type="button" role="option" data-v="y" aria-selected="false"><span>Neueste (DE)</span><span class="ck">✓</span></button>
+    <button type="button" role="option" data-v="p" aria-selected="false"><span>Zuletzt hinzugefügt</span><span class="ck">✓</span></button>
+   </div>
 <main id="grid"></main>
 
 <div class="scrim" id="scrim"></div>
@@ -431,11 +458,35 @@ async function saveMark(){
 $('#chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;st.g=c.dataset.g;render();window.scrollTo({top:0,behavior:'smooth'})});
 $('#q').addEventListener('input',e=>{st.q=e.target.value;$('#sw').classList.toggle('has',!!st.q);grid()});
 $('#qx').addEventListener('click',e=>{e.preventDefault();$('#q').value='';st.q='';$('#sw').classList.remove('has');grid()});
-$('#sort').addEventListener('change',e=>{st.sort=e.target.value;grid()});
+$('#sort').addEventListener('change',e=>{st.sort=e.target.value;grid();if(typeof sortSync==='function')sortSync()});
 $('#grid').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)detail(c.dataset.k)});
 $('#grid').addEventListener('keydown',e=>{const c=e.target.closest('.card');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();detail(c.dataset.k)}});
 const chipsEl=$('#chips');const chipEnd=()=>chipsEl.classList.toggle('end',chipsEl.scrollLeft+chipsEl.clientWidth>=chipsEl.scrollWidth-4);chipsEl.addEventListener('scroll',chipEnd,{passive:true});addEventListener('resize',chipEnd);
-addEventListener('scroll',()=>document.querySelector('header').classList.toggle('scrolled',scrollY>4),{passive:true});
+(()=>{const SHORT={r:'★ Beste',n:'Stimmen',t:'Titel A–Z',a:'Autor A–Z',y:'Neueste',p:'Zuletzt'};
+ const h=()=>document.querySelector('header'), btn=$('#sortVis'), menu=$('#sortmenu'), sel=$('#sort');
+ const sortSync=window.sortSync=()=>{const v=st.sort;if(sel.value!==v)sel.value=v;const sl=btn.querySelector('.slabel');if(sl)sl.textContent=SHORT[v]||'';
+  menu.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===v?'true':'false'));};
+ const sortPlace=()=>{const r=btn.getBoundingClientRect();const w=Math.min(280,innerWidth-32);menu.style.top=(r.bottom+6)+'px';let left=Math.min(r.right-w,r.left);left=Math.max(8,Math.min(left,innerWidth-w-8));menu.style.left=left+'px';menu.style.right='auto';menu.style.width=w+'px'};
+ const sortClose=()=>{menu.classList.remove('on');menu.hidden=true;btn.setAttribute('aria-expanded','false')};
+ const sortOpen=()=>{sortY=scrollY;sortSync();menu.hidden=false;menu.classList.add('on');btn.setAttribute('aria-expanded','true');sortPlace()};
+ btn.addEventListener('click',e=>{e.preventDefault();menu.classList.contains('on')?sortClose():sortOpen()});
+ menu.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(!b)return;st.sort=b.dataset.v;sel.value=st.sort;sortSync();sortClose();grid()});
+ document.addEventListener('click',e=>{if(menu.classList.contains('on')&&!e.target.closest('.sort')&&!e.target.closest('#sortmenu'))sortClose()});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menu.classList.contains('on')){e.stopImmediatePropagation();sortClose()}},true);
+ sortSync();
+ /* Kopf: Hysterese + Ausgleich der Scrollposition, damit die Liste beim Schrumpfen nicht hüpft */
+ let kopfLock=false, sortY=0;
+ const kopfSet=want=>{const hd=h();if(want===hd.classList.contains('compact')){hd.classList.toggle('scrolled',scrollY>4);return}
+  const yNow=Math.max(0,scrollY);
+  if(!want&&yNow<2){hd.classList.remove('compact');hd.classList.remove('scrolled');return}
+  kopfLock=true;const before=hd.offsetHeight;hd.classList.toggle('compact',want);hd.classList.toggle('scrolled',yNow>4||want);
+  const after=hd.offsetHeight,d=after-before;if(d)scrollTo(0,Math.max(0,yNow+d));kopfLock=false;if(menu.classList.contains('on'))sortPlace()};
+ const kopfOnScroll=()=>{if(kopfLock)return;
+  if(menu.classList.contains('on')&&Math.abs(scrollY-sortY)>24)sortClose();
+  const compact=h().classList.contains('compact');const y=Math.max(0,scrollY);kopfSet(compact?y>10:y>80)};
+ addEventListener('scroll',kopfOnScroll,{passive:true});
+ addEventListener('resize',()=>{if(menu.classList.contains('on'))sortPlace();kopfOnScroll()},{passive:true});
+})();
 $('#close').onclick=closeDetail;$('#scrim').onclick=closeDetail;$('#prev').onclick=()=>step(-1);$('#next').onclick=()=>step(1);
 $('#dscrim').onclick=()=>{if(!saving)closeDlg()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#dlg').classList.contains('on')){if(!saving)closeDlg()}else if(st.open)closeDetail()}
