@@ -181,6 +181,11 @@ main{padding:16px var(--padR) calc(96px + env(safe-area-inset-bottom)) var(--pad
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* iPad hoch und größer */
+@media(max-width:600px){
+ main{gap:18px 16px}
+ .meta{padding-top:8px;height:72px}
+ .card p{margin-top:2px}
+}
 @media(min-width:700px){
  :root{--pad:32px}
  .kopf-titel{padding-top:calc(env(safe-area-inset-top) + 22px)}
